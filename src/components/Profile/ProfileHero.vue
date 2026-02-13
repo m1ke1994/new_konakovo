@@ -6,15 +6,27 @@
                 <router-link to="/" class="hero-nav__drawer-title" @click="closeMenu">Новое Конаково</router-link>
                 <button class="hero-nav__drawer-close" type="button" aria-label="Закрыть меню" @click="closeMenu">×</button>
             </div>
-            <router-link
-                v-for="item in menuItems"
-                :key="item.to"
-                :to="item.to"
-                class="hero-nav__drawer-link"
-                active-class="hero-nav__drawer-link--active"
-                @click="closeMenu"
-            >
-                {{ item.label }}
+            <template v-for="item in menuItems" :key="item.to || item.href">
+                <router-link
+                    v-if="item.to"
+                    :to="item.to"
+                    class="hero-nav__drawer-link"
+                    active-class="hero-nav__drawer-link--active"
+                    @click="closeMenu"
+                >
+                    {{ item.label }}
+                </router-link>
+                <a
+                    v-else
+                    :href="item.href"
+                    class="hero-nav__drawer-link"
+                    @click="closeMenu"
+                >
+                    {{ item.label }}
+                </a>
+            </template>
+            <router-link class="hero-nav__drawer-cta btn-primary" to="/contacts" @click="closeMenu">
+                Связаться со мной
             </router-link>
         </aside>
 
@@ -25,15 +37,23 @@
                     <router-link to="/" class="hero-nav__brand">Новое Конаково</router-link>
 
                     <nav class="hero-nav__links">
-                        <router-link
-                            v-for="item in menuItems"
-                            :key="item.to"
-                            :to="item.to"
-                            class="hero-nav__link"
-                            active-class="hero-nav__link--active"
-                        >
-                            {{ item.label }}
-                        </router-link>
+                        <template v-for="item in menuItems" :key="item.to || item.href">
+                            <router-link
+                                v-if="item.to && !item.mobileOnly"
+                                :to="item.to"
+                                class="hero-nav__link"
+                                active-class="hero-nav__link--active"
+                            >
+                                {{ item.label }}
+                            </router-link>
+                            <a
+                                v-else-if="!item.mobileOnly"
+                                :href="item.href"
+                                class="hero-nav__link"
+                            >
+                                {{ item.label }}
+                            </a>
+                        </template>
                     </nav>
 
                     <div class="hero-nav__actions">
@@ -367,6 +387,11 @@ onUnmounted(() => {
 
 .hero-nav__drawer-link:active {
     transform: scale(0.99);
+}
+
+.hero-nav__drawer-cta {
+    margin-top: auto;
+    width: 100%;
 }
 
 .hero__top {

@@ -17,6 +17,7 @@ const menuItems = [
   { label: "Братство Лосей", to: "/moose" },
   { label: "Волонтерские программы", to: "/volunteer" },
   { label: "Беговой клуб", to: "/running-club" },
+  { label: "Услуги и цены", href: "#services", mobileOnly: true },
   { label: "Статьи / Видео", to: "/articles" },
   { label: "Новости", to: "/news" },
   { label: "Расписание", to: "/schedule" },

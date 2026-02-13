@@ -4,11 +4,14 @@ import { useRoute } from 'vue-router'
 import BurgerMenuButton from './Profile/BurgerMenuButton.vue'
 
 const route = useRoute()
+const servicesMenuLabel = '\u0423\u0441\u043b\u0443\u0433\u0438 \u0438 \u0446\u0435\u043d\u044b'
+const contactsCtaLabel = '\u0421\u0432\u044f\u0437\u0430\u0442\u044c\u0441\u044f \u0441\u043e \u043c\u043d\u043e\u0439'
 const menuItems = [
   { label: 'Обо мне', to: '/about' },
   { label: 'Братство Лосей', to: '/moose' },
   { label: 'Волонтерские программы', to: '/volunteer' },
   { label: 'Беговой клуб', to: '/running-club' },
+  { label: servicesMenuLabel, href: '/#services', mobileOnly: true },
   { label: 'Статьи / Видео', to: '/articles' },
   { label: 'Новости', to: '/news' },
   { label: 'Расписание', to: '/schedule' },
@@ -93,18 +96,26 @@ onUnmounted(() => {
     <header class="app-header__bar" :class="{ 'app-header__bar--stuck': isSticky }">
       <div class="app-header__inner">
         <router-link to="/" class="app-header__brand">Новое Конаково</router-link>
-
         <nav class="app-header__links">
-          <router-link
-            v-for="item in menuItems"
-            :key="item.to"
-            :to="item.to"
-            class="app-header__link"
-            active-class="app-header__link--active"
-            @click="closeMenu"
-          >
-            {{ item.label }}
-          </router-link>
+          <template v-for="item in menuItems" :key="item.to || item.href">
+            <router-link
+              v-if="item.to && !item.mobileOnly"
+              :to="item.to"
+              class="app-header__link"
+              active-class="app-header__link--active"
+              @click="closeMenu"
+            >
+              {{ item.label }}
+            </router-link>
+            <a
+              v-else-if="!item.mobileOnly"
+              :href="item.href"
+              class="app-header__link"
+              @click="closeMenu"
+            >
+              {{ item.label }}
+            </a>
+          </template>
         </nav>
 
         <div class="app-header__actions">
@@ -122,16 +133,27 @@ onUnmounted(() => {
         <router-link to="/" class="app-header__drawer-title" @click="closeMenu">Новое Конаково</router-link>
         <button class="app-header__drawer-close" type="button" aria-label="Закрыть меню" @click="closeMenu">×</button>
       </div>
-
-      <router-link
-        v-for="item in menuItems"
-        :key="item.to"
-        :to="item.to"
-        class="app-header__drawer-link"
-        active-class="app-header__drawer-link--active"
-        @click="closeMenu"
-      >
-        {{ item.label }}
+      <template v-for="item in menuItems" :key="item.to || item.href">
+        <router-link
+          v-if="item.to"
+          :to="item.to"
+          class="app-header__drawer-link"
+          active-class="app-header__drawer-link--active"
+          @click="closeMenu"
+        >
+          {{ item.label }}
+        </router-link>
+        <a
+          v-else
+          :href="item.href"
+          class="app-header__drawer-link"
+          @click="closeMenu"
+        >
+          {{ item.label }}
+        </a>
+      </template>
+      <router-link class="app-header__drawer-cta btn-primary" to="/contacts" @click="closeMenu">
+        {{ contactsCtaLabel }}
       </router-link>
     </aside>
   </div>
@@ -333,6 +355,11 @@ onUnmounted(() => {
 
 .app-header__drawer-link:active {
   transform: scale(0.99);
+}
+
+.app-header__drawer-cta {
+  margin-top: auto;
+  width: 100%;
 }
 
 @media (max-width: 900px) {
