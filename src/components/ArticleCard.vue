@@ -20,7 +20,7 @@ const props = defineProps({
     <div class="article-card__content">
       <h3 class="article-card__title">{{ item.title }}</h3>
       <p v-if="showDescription" class="article-card__description">{{ item.description }}</p>
-      <router-link class="article-card__action btn-primary" :to="`/articles/${item.id}`">Читать далее</router-link>
+      <router-link class="article-card__action btn-outline" :to="`/articles/${item.id}`">Читать дальше</router-link>
     </div>
   </article>
 </template>
