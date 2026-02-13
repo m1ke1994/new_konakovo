@@ -394,6 +394,14 @@ onUnmounted(() => {
     background: linear-gradient(180deg, rgba(12, 9, 7, 0.65), rgba(12, 9, 7, 0.1));
 }
 
+.hero__top::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.2);
+    pointer-events: none;
+}
+
 .hero__top > * {
     position: relative;
     z-index: 1;
@@ -409,7 +417,7 @@ onUnmounted(() => {
     font-size: clamp(44px, 8.4vw, 120px);
     line-height: 0.95;
     letter-spacing: 0.02em;
-    color: white;
+    color: black;
     text-align: center;
     pointer-events: none;
     width: min(90%, 1100px);
