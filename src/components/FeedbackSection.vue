@@ -264,9 +264,9 @@ const handleConfirm = () => {
 }
 
 .tariff__btn.active {
-  background: var(--primary);
-  border-color: var(--primary);
-  color: #fff;
+  background: var(--button-primary-bg);
+  border-color: var(--button-primary-bg);
+  color: var(--button-primary-text);
 }
 
 .tariff__desc {

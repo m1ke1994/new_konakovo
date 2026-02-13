@@ -231,9 +231,9 @@ const formatPrice = (v) =>
 }
 
 .month-schedule__day.active {
-  background: var(--primary);
-  color: #fff;
-  border-color: var(--primary);
+  background: var(--button-primary-bg);
+  color: var(--button-primary-text);
+  border-color: var(--button-primary-bg);
 }
 
 .month-schedule__day.disabled {

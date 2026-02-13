@@ -69,7 +69,7 @@
                         путешествие под ваш ритм и интересы. А для местных создаю сообщество, где есть движение, поддержка,
                         общение и ощущение «своего места».
                     </div>
-                    <router-link class="info__btn btn-primary" to="/contacts">Связаться со мной</router-link>
+                    <router-link class="info__btn btn-primary btn-hero-contact" to="/contacts">Связаться со мной</router-link>
                 </div>
             </div>
         </div>

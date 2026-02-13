@@ -1,4 +1,5 @@
 @import './variables.css';
+@import './theme.css';
 @import './fonts.css';
 
 @tailwind base;
@@ -80,14 +81,19 @@ a {
 }
 
 .btn-primary {
-  background: var(--color-sun);
-  color: var(--color-dark-deep);
-  border-color: color-mix(in srgb, var(--color-orange) 55%, var(--color-border-accent));
+  background: var(--button-primary-bg);
+  color: var(--button-primary-text);
+  border-color: var(--button-primary-border);
   box-shadow: 0 10px 22px var(--shadow);
 }
 
 .btn-primary:hover {
-  background: var(--color-orange);
+  background: var(--button-primary-bg-hover);
+  transform: translateY(-1px);
+}
+
+.btn-primary:active {
+  background: var(--button-primary-bg-active);
   transform: translateY(-1px);
 }
 
@@ -102,6 +108,10 @@ a {
   transform: translateY(-1px);
 }
 
+.btn-secondary:active {
+  background: color-mix(in srgb, var(--color-warm-yellow) 90%, #000000);
+}
+
 .btn-outline {
   background: transparent;
   color: var(--color-warm-brown);
@@ -111,6 +121,20 @@ a {
 .btn-outline:hover {
   background: color-mix(in srgb, var(--color-sand) 30%, transparent);
   color: var(--color-dark-deep);
+}
+
+.btn-hero-contact {
+  background: var(--button-hero-bg);
+  color: var(--button-hero-text);
+  border-color: var(--button-hero-border);
+}
+
+.btn-hero-contact:hover {
+  background: var(--button-hero-bg-hover);
+}
+
+.btn-hero-contact:active {
+  background: var(--button-hero-bg-active);
 }
 
 .glass-card {
