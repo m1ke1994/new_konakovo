@@ -69,9 +69,30 @@
       <!-- RIGHT PANEL -->
       <aside class="scenario__aside">
         <div class="panel">
+          <input
+            type="text"
+            v-model="name"
+            placeholder="Имя"
+          />
 
-          <input type="date" v-model="date" />
-          <input type="number" min="1" max="10" v-model.number="guests" />
+          <input
+            type="text"
+            v-model="contact"
+            placeholder="Email или номер телефона"
+          />
+
+          <input
+            type="date"
+            v-model="date"
+            placeholder="Выберите дату"
+          />
+          <input
+            type="number"
+            min="1"
+            max="10"
+            v-model.number="guests"
+            placeholder="Количество гостей"
+          />
           <textarea
             rows="3"
             v-model="comment"
@@ -109,8 +130,10 @@ import { services } from "../data/services";
 
 const selectedTariffIds = ref([]);
 const openServiceId = ref(null);
+const name = ref("");
+const contact = ref("");
 const date = ref("");
-const guests = ref(1);
+const guests = ref("");
 const comment = ref("");
 
 const toggleService = (id) => {
@@ -147,6 +170,8 @@ const handleConfirm = () => {
   console.log({
     tariffs: selectedTariffs.value,
     total: total.value,
+    name: name.value,
+    contact: contact.value,
     date: date.value,
     guests: guests.value,
     comment: comment.value,
