@@ -30,7 +30,7 @@
             </router-link>
         </aside>
 
-        <div class="hero__top">
+        <div class="hero__top" :style="heroTopStyle">
             <div ref="stickySentinel" class="hero__sentinel" aria-hidden="true"></div>
             <header class="hero-nav" :class="{ 'hero-nav--stuck': isSticky }">
                 <div class="hero-nav__inner">
@@ -67,7 +67,8 @@
         <div class="hero__bottom">
             <div class="avatar" v-reveal>
                 <img
-                    src="/9.jpeg"
+                    v-if="heroAvatarSrc"
+                    :src="heroAvatarSrc"
                     alt="Фото"
                     loading="lazy"
                     decoding="async"
@@ -76,12 +77,15 @@
                     class="img-lazy"
                     @load="markImageLoaded"
                 >
+                <div v-else class="avatar__placeholder">Фото</div>
             </div>
             <div class="info" v-reveal.delay="120">
-                <div class="info__name">Лиза Стручкова</div>
+                <div class="info__name">{{ displayTitle }}</div>
                 <div class="info__row">
+                    <div v-if="loadingHero" class="info__status">Загрузка Hero...</div>
+                    <div v-else-if="heroError" class="info__status">Hero временно недоступен. Показаны запасные данные.</div>
                     <div class="info__about">
-            Делюсь событиями, тишиной и теплыми практиками в Конаково. Я переехала из Москвы в Конаково и создала здесь пространство для осознанного отдыха, живых встреч и глубокого контакта с природой. Это место про замедление, внимание к себе и теплые человеческие связи - вдали от суеты и спешки. Я провожу экскурсии по природным местам, утренние практики, чайные церемонии и мастер-классы, объединяя их в цельный опыт. Для гостей Конаково становлюсь проводником, помогаю собрать день или путешествие под ваш ритм и интересы. А для местных создаю сообщество, где есть движение, поддержка, общение и ощущение «своего места».
+                        {{ displayDescription }}
                     </div>
                     <router-link class="info__btn btn-primary" to="/contacts">Связаться со мной</router-link>
                 </div>
@@ -91,8 +95,9 @@
 </template>
 
 <script setup>
-import { onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import BurgerMenuButton from './BurgerMenuButton.vue'
+import { useHero } from '../../composables/useHero'
 
 defineProps({
     menuItems: { type: Array, required: true },
@@ -101,12 +106,23 @@ defineProps({
 const isMenuOpen = ref(false)
 const isSticky = ref(false)
 const stickySentinel = ref(null)
+const { hero, loadingHero, heroError, loadHero } = useHero()
 
 let observer = null
 let preloadLink = null
 let useScrollFallback = false
+const fallbackTitle = 'Гость Конаково'
+const fallbackDescription = 'Делюсь событиями, тишиной и тёплыми практиками в Конаково.'
 
-const heroImage = '/konakovo_lenta.JPG'
+const heroBackgroundImage = computed(() => hero.value?.background_image || '')
+const heroAvatarSrc = computed(() => hero.value?.avatar || '')
+const displayTitle = computed(() => hero.value?.title || fallbackTitle)
+const displayDescription = computed(() => hero.value?.description || fallbackDescription)
+const heroTopStyle = computed(() => ({
+    backgroundImage: heroBackgroundImage.value
+        ? `url(${heroBackgroundImage.value})`
+        : 'none',
+}))
 
 const toggleMenu = () => {
     isMenuOpen.value = !isMenuOpen.value
@@ -152,15 +168,16 @@ const setupStickyObserver = () => {
 }
 
 const setupHeroPreload = () => {
-    if (typeof document === 'undefined' || !heroImage) return
+    if (typeof document === 'undefined' || !heroBackgroundImage.value) return
     preloadLink = document.createElement('link')
     preloadLink.rel = 'preload'
     preloadLink.as = 'image'
-    preloadLink.href = heroImage
+    preloadLink.href = heroBackgroundImage.value
     document.head.appendChild(preloadLink)
 }
 
-onMounted(() => {
+onMounted(async () => {
+    await loadHero()
     setupHeroPreload()
     setupStickyObserver()
     if (useScrollFallback) {
@@ -172,6 +189,11 @@ onMounted(() => {
 
 watch(isMenuOpen, (opened) => {
     setBodyScrollLock(opened)
+})
+
+watch(heroBackgroundImage, () => {
+    preloadLink?.remove()
+    setupHeroPreload()
 })
 
 onUnmounted(() => {
@@ -396,7 +418,10 @@ onUnmounted(() => {
 
 .hero__top {
     position: relative;
-    background: url('/8.jpeg') center/cover no-repeat;
+    background: color-mix(in srgb, var(--card) 70%, #000);
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
     height: 420px;
     display: flex;
     align-items: flex-start;
@@ -483,6 +508,11 @@ onUnmounted(() => {
     display: block;
 }
 
+.avatar__placeholder {
+    color: var(--muted);
+    font-size: 14px;
+}
+
 .info {
     margin-left: 360px;
     padding-top: 8px;
@@ -505,6 +535,11 @@ onUnmounted(() => {
     font-size: 14px;
     color: var(--muted);
     line-height: 1.6;
+}
+
+.info__status {
+    font-size: 13px;
+    color: var(--muted);
 }
 
 .info__btn {

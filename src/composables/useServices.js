@@ -1,9 +1,6 @@
 import { computed, ref } from "vue";
 import { servicesSeed } from "../data/servicesSeed";
 
-const apiBase = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
-const servicesEndpoint = `${apiBase}/api/services/`;
-
 const servicesTree = ref([]);
 const servicesLoading = ref(false);
 const servicesLoaded = ref(false);
@@ -29,7 +26,7 @@ const normalizeTariff = (tariff, index = 0) => ({
   title: String(tariff?.title || ""),
   description: String(tariff?.description || ""),
   duration: String(tariff?.duration || tariff?.duration_label || ""),
-  actionLabel: String(tariff?.action_label || "Выбрать"),
+  actionLabel: String(tariff?.action_label || "Р’С‹Р±СЂР°С‚СЊ"),
   actionLink: String(tariff?.action_link || ""),
   price: toNumber(tariff?.price, 0),
   order: toNumber(tariff?.order, index),
@@ -214,16 +211,8 @@ const flattenServicesWithTariffs = (items) =>
     return [...current, ...flattenServicesWithTariffs(item.children)];
   });
 
-const extractPayload = (payload) => {
-  if (Array.isArray(payload)) return payload;
-  if (Array.isArray(payload?.results)) return payload.results;
-  if (Array.isArray(payload?.data)) return payload.data;
-  if (Array.isArray(payload?.items)) return payload.items;
-  return [];
-};
-
 export const formatPrice = (price) =>
-  `${Number(price || 0).toLocaleString("ru-RU")} ₽`;
+  `${Number(price || 0).toLocaleString("ru-RU")} в‚Ѕ`;
 
 export const findMinTariffPrice = (service) => {
   const own = service.tariffs.map((tariff) => tariff.price);
@@ -243,34 +232,8 @@ export const loadServices = async ({ force = false } = {}) => {
   servicesError.value = "";
 
   try {
-    const response = await fetch(servicesEndpoint, {
-      headers: { Accept: "application/json" },
-    });
-    if (!response.ok) {
-      throw new Error(`services request failed: ${response.status}`);
-    }
-
-    const payload = await response.json();
-    const items = extractPayload(payload);
-    const normalized = items.length
-      ? normalizeServices(items)
-      : normalizeServices(cloneSeed());
-    servicesTree.value = normalized.length ? normalized : normalizeServices(cloneSeed());
-
-    console.log("[services] loaded", {
-      endpoint: servicesEndpoint,
-      rawCount: items.length,
-      rootCount: servicesTree.value.length,
-      source: items.length && normalized.length ? "api" : "seed",
-    });
-
-    servicesLoaded.value = true;
-  } catch (error) {
     servicesTree.value = normalizeServices(cloneSeed());
     servicesLoaded.value = true;
-    servicesError.value = "API недоступен: показаны временные данные";
-    console.warn("[services] fallback to seed due to api error");
-    console.error(error);
   } finally {
     servicesLoading.value = false;
   }
