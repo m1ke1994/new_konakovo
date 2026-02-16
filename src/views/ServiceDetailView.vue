@@ -11,17 +11,29 @@ const route = useRoute();
 const { getServiceByPath, servicesError, servicesLoaded, servicesLoading } = useServices();
 const bookingSectionRef = ref(null);
 const selectedTariff = ref(null);
+const selectedBookingService = ref(null);
 
 const slugPath = computed(() =>
   String(route.params.slugPath || "").replace(/^\/+|\/+$/g, "")
 );
 
 const service = computed(() => getServiceByPath(slugPath.value));
+const bookingService = computed(() => selectedBookingService.value || service.value);
 const hasTariffs = computed(() => Array.isArray(service.value?.tariffs) && service.value.tariffs.length > 0);
 const hasChildren = computed(() => Array.isArray(service.value?.children) && service.value.children.length > 0);
 
 const chooseTariff = (tariff) => {
+  selectedBookingService.value = service.value || null;
   selectedTariff.value = tariff || null;
+  bookingSectionRef.value?.scrollIntoView({
+    behavior: "smooth",
+    block: "start",
+  });
+};
+
+const chooseChildService = (child) => {
+  selectedBookingService.value = child || null;
+  selectedTariff.value = null;
   bookingSectionRef.value?.scrollIntoView({
     behavior: "smooth",
     block: "start",
@@ -35,6 +47,7 @@ onMounted(() => {
 watch(
   () => route.params.slugPath,
   () => {
+    selectedBookingService.value = null;
     selectedTariff.value = null;
     if (!servicesLoaded.value && !servicesLoading.value) {
       loadServices();
@@ -116,9 +129,14 @@ watch(
           >
             <h3 class="service-page__h3">{{ child.title }}</h3>
             <p v-if="child.description" class="service-page__text">{{ child.description }}</p>
-            <router-link class="btn-outline" :to="`/services/${child.path}`">
-              Открыть
-            </router-link>
+            <div class="service-page__card-actions">
+              <button class="btn-primary" type="button" @click="chooseChildService(child)">
+                Выбрать
+              </button>
+              <router-link class="btn-outline" :to="`/services/${child.path}`">
+                Открыть
+              </router-link>
+            </div>
           </article>
         </div>
       </section>
@@ -144,7 +162,7 @@ watch(
 
       <section ref="bookingSectionRef" class="service-page__section">
         <ServiceBookingForm
-          :service="service"
+          :service="bookingService || service"
           :selected-tariff="selectedTariff"
           @update:selected-tariff="selectedTariff = $event"
         />
@@ -235,6 +253,12 @@ watch(
   padding: 16px;
   display: grid;
   gap: 10px;
+}
+
+.service-page__card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .service-page__meta {
