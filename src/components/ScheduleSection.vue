@@ -55,7 +55,6 @@
         <section
           v-for="dayGroup in visibleMonthDays"
           :key="dayGroup.dateKey"
-          :ref="(el) => setDayRef(dayGroup.dateKey, el)"
           class="month-schedule__day-group"
           :class="{ 'month-schedule__day-group--open': isDayOpen(dayGroup.dateKey) }"
         >
@@ -163,17 +162,12 @@ const parseDateKey = (dateKey) => {
   return new Date(year, month - 1, day);
 };
 
-const addDays = (baseDate, amount) => {
-  const date = new Date(baseDate);
-  date.setDate(date.getDate() + amount);
-  return toDateKey(date);
-};
-
 const today = new Date();
 const todayDateKey = toDateKey(today);
 const INITIAL_VISIBLE_DAYS = 5;
 const VISIBLE_DAYS_STEP = 5;
 const MONTHS_AHEAD = 8;
+const MIN_EVENTS_TARGET = 110;
 
 const randomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
 
@@ -234,6 +228,7 @@ const toTimeLabel = (hours, minutes = 0) =>
 const generateEvents = () => {
   const generated = [];
   let idCounter = 1;
+  const eventsByDate = new Map();
 
   for (let monthOffset = 0; monthOffset < MONTHS_AHEAD; monthOffset += 1) {
     const monthDate = new Date(today.getFullYear(), today.getMonth() + monthOffset, 1);
@@ -274,8 +269,48 @@ const generateEvents = () => {
           description: template.description,
           color: template.color,
         });
+
+        eventsByDate.set(dateKey, (eventsByDate.get(dateKey) || 0) + 1);
       }
     });
+  }
+
+  if (generated.length < MIN_EVENTS_TARGET) {
+    const sortedDates = Array.from(eventsByDate.keys()).sort((a, b) =>
+      parseDateKey(a).getTime() - parseDateKey(b).getTime()
+    );
+
+    let dateCursor = 0;
+    while (generated.length < MIN_EVENTS_TARGET && sortedDates.length) {
+      const dateKey = sortedDates[dateCursor % sortedDates.length];
+      const dateLoad = eventsByDate.get(dateKey) || 0;
+
+      if (dateLoad < 3) {
+        const template = eventTemplates[randomInt(0, eventTemplates.length - 1)];
+        const startHour = 9 + dateLoad * 2;
+        const durationMinutes = [60, 90, 120][randomInt(0, 2)];
+        const endTotalMinutes = startHour * 60 + durationMinutes;
+        const endHour = Math.floor(endTotalMinutes / 60);
+        const endMinutes = endTotalMinutes % 60;
+
+        generated.push({
+          id: idCounter++,
+          date: dateKey,
+          title: template.title,
+          category: template.category,
+          start: toTimeLabel(startHour),
+          end: toTimeLabel(endHour, endMinutes),
+          price: randomInt(template.price[0], template.price[1]),
+          image: template.image,
+          description: template.description,
+          color: template.color,
+        });
+
+        eventsByDate.set(dateKey, dateLoad + 1);
+      }
+
+      dateCursor += 1;
+    }
   }
 
   return generated;
@@ -350,7 +385,6 @@ const activeMonth = ref("");
 const activeDay = ref("");
 const openedDays = ref({});
 const visibleDayCount = ref(INITIAL_VISIBLE_DAYS);
-const dayRefs = ref({});
 const dayButtonRefs = ref({});
 const daysStripRef = ref(null);
 
@@ -397,30 +431,12 @@ const setActiveMonth = (monthKey) => {
   activeMonth.value = monthKey;
 };
 
-const setDayRef = (dayKey, el) => {
-  if (!el) {
-    delete dayRefs.value[dayKey];
-    return;
-  }
-  dayRefs.value[dayKey] = el;
-};
-
 const setDayButtonRef = (dayKey, el) => {
   if (!el) {
     delete dayButtonRefs.value[dayKey];
     return;
   }
   dayButtonRefs.value[dayKey] = el;
-};
-
-const scrollToDay = (dayKey, smooth = true) => {
-  const target = dayRefs.value[dayKey];
-  if (!target) return;
-
-  target.scrollIntoView({
-    behavior: smooth ? "smooth" : "auto",
-    block: "start",
-  });
 };
 
 const scrollRibbonToActiveDay = (smooth = true) => {
@@ -446,7 +462,6 @@ const resetMonthView = async () => {
 
   await nextTick();
   if (defaultDay) {
-    scrollToDay(defaultDay, false);
     scrollRibbonToActiveDay(false);
   }
 };
@@ -464,7 +479,6 @@ const focusDay = async (dayKey) => {
   }
 
   await nextTick();
-  scrollToDay(dayKey, true);
   scrollRibbonToActiveDay(true);
 };
 
@@ -559,25 +573,6 @@ const formatPrice = (value) => `${Number(value).toLocaleString("ru-RU")} ₽`;
   background: var(--primary);
   color: var(--color-dark-deep);
   border-color: var(--primary);
-}
-
-.month-schedule__month-select-wrap {
-  display: grid;
-  gap: 6px;
-  max-width: 280px;
-}
-
-.month-schedule__month-select-label {
-  font-size: 12px;
-  color: var(--muted);
-}
-
-.month-schedule__month-select {
-  border: 1px solid var(--border);
-  background: var(--bg-elevated);
-  color: var(--text);
-  border-radius: 10px;
-  padding: 8px 10px;
 }
 
 .month-schedule__days {
@@ -720,6 +715,24 @@ const formatPrice = (value) => `${Number(value).toLocaleString("ru-RU")} ₽`;
 
 .month-schedule__day-group--open .month-schedule__date-events {
   padding-top: 2px;
+}
+
+.month-schedule__more {
+  justify-self: center;
+  margin-top: 2px;
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--text-strong);
+  border-radius: 999px;
+  padding: 9px 14px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: transform 120ms ease, border-color 120ms ease;
+}
+
+.month-schedule__more:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--primary) 50%, var(--border));
 }
 
 .month-schedule__empty {
