@@ -56,7 +56,7 @@ const latestNews = computed(() =>
         <section id="articles" class="app-section" v-reveal>
           <div class="app-section__inner">
             <div class="articles-home__head">
-              <h2 class="app-section__title articles-home__title">Статьи</h2>
+              <h2 class="app-section__title articles-home__title">Статьи / Видео</h2>
             </div>
 
             <div class="articles-home__grid">

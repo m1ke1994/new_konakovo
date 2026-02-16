@@ -20,6 +20,7 @@ const router = createRouter({
     { path: '/articles/:id', name: 'article-single', component: () => import('../views/ArticlesSingleView.vue') },
     { path: '/news', name: 'news', component: () => import('../views/NewsView.vue') },
     { path: '/news/:id', name: 'news-single', component: () => import('../views/NewsSingleView.vue') },
+    { path: '/services/:id', name: 'service-detail', component: () => import('../views/ServiceDetailView.vue') },
     { path: '/contacts', name: 'contacts', component: () => import('../views/ContactsView.vue') },
     { path: '/privacy', name: 'privacy', component: () => import('../views/PrivacyView.vue') },
     { path: '/terms', name: 'terms', component: () => import('../views/TermsView.vue') },

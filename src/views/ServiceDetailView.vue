@@ -1,0 +1,273 @@
+<script setup>
+import { computed } from "vue";
+import { useRoute } from "vue-router";
+import AppHeader from "../components/AppHeader.vue";
+import AppFooter from "../components/AppFooter.vue";
+import { services } from "../data/services";
+
+const route = useRoute();
+
+const service = computed(() =>
+  services.find((item) => item.id === String(route.params.id))
+);
+
+const formatPrice = (price) => `${Number(price || 0).toLocaleString("ru-RU")} ₽`;
+
+const hasTariffs = computed(
+  () => Array.isArray(service.value?.tariffs) && service.value.tariffs.length > 0
+);
+
+const hasSubservices = computed(
+  () => Array.isArray(service.value?.subservices) && service.value.subservices.length > 0
+);
+</script>
+
+<template>
+  <AppHeader />
+
+  <main class="service-page">
+    <section v-if="service" class="service-page__inner">
+      <header class="service-page__hero">
+        <h1 class="service-page__title">{{ service.fullTitle || service.title }}</h1>
+        <p class="service-page__subtitle">{{ service.description }}</p>
+      </header>
+
+      <section class="service-page__section">
+        <h2 class="service-page__h2">Описание</h2>
+        <p v-if="service.intro" class="service-page__text">{{ service.intro }}</p>
+        <article
+          v-for="(block, index) in service.contentSections || []"
+          :key="`${service.id}-content-${index}`"
+          class="service-page__content-block"
+        >
+          <h3 class="service-page__h3">{{ block.title }}</h3>
+          <p
+            v-for="(paragraph, paragraphIndex) in block.paragraphs || []"
+            :key="`${service.id}-paragraph-${index}-${paragraphIndex}`"
+            class="service-page__text"
+          >
+            {{ paragraph }}
+          </p>
+        </article>
+      </section>
+
+      <section v-if="service.gallery?.length" class="service-page__section">
+        <h2 class="service-page__h2">Галерея</h2>
+        <div class="service-page__gallery">
+          <article
+            v-for="(item, index) in service.gallery"
+            :key="`${service.id}-gallery-${index}`"
+            class="service-page__gallery-item"
+          >
+            <img
+              v-if="item.type === 'image'"
+              :src="item.src"
+              :alt="service.title"
+              loading="lazy"
+              decoding="async"
+            />
+            <iframe
+              v-else
+              :src="item.src"
+              title="Видео услуги"
+              loading="lazy"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              referrerpolicy="strict-origin-when-cross-origin"
+              allowfullscreen
+            ></iframe>
+          </article>
+        </div>
+      </section>
+
+      <section v-if="hasTariffs || hasSubservices" class="service-page__section">
+        <h2 class="service-page__h2">{{ hasSubservices ? "Подуслуги" : "Тарифы" }}</h2>
+
+        <div v-if="hasSubservices" class="service-page__grid">
+          <article
+            v-for="(item, index) in service.subservices"
+            :key="`${service.id}-subservice-${index}`"
+            class="service-page__card glass-card"
+          >
+            <h3 class="service-page__h3">{{ item.title }}</h3>
+            <p v-if="item.description" class="service-page__text">{{ item.description }}</p>
+          </article>
+        </div>
+
+        <div v-if="hasTariffs" class="service-page__grid">
+          <article
+            v-for="tariff in service.tariffs"
+            :key="tariff.id"
+            class="service-page__card glass-card"
+          >
+            <h3 class="service-page__h3">{{ tariff.title }}</h3>
+            <p class="service-page__text">{{ tariff.description }}</p>
+            <p class="service-page__price">{{ formatPrice(tariff.price) }}</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="service-page__section">
+        <div class="service-page__cta glass-card">
+          <h2 class="service-page__h2">Запись на услугу</h2>
+          <p class="service-page__text">
+            Оставьте заявку, и мы поможем подобрать формат и удобное время.
+          </p>
+          <router-link class="btn-primary service-page__cta-link" to="/contacts">
+            Связаться
+          </router-link>
+        </div>
+      </section>
+    </section>
+
+    <section v-else class="service-page__inner">
+      <div class="service-page__empty glass-card">
+        <h1 class="service-page__title">Услуга не найдена</h1>
+        <p class="service-page__text">Откройте раздел услуг на главной и выберите нужный формат.</p>
+        <router-link class="btn-secondary" to="/#services">К услугам</router-link>
+      </div>
+    </section>
+  </main>
+
+  <AppFooter />
+</template>
+
+<style scoped>
+.service-page {
+  min-height: 100vh;
+  background: var(--bg);
+}
+
+.service-page__inner {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 96px 20px 72px;
+  display: grid;
+  gap: 20px;
+}
+
+.service-page__hero {
+  display: grid;
+  gap: 12px;
+}
+
+.service-page__title {
+  margin: 0;
+  font-size: clamp(32px, 5vw, 48px);
+  line-height: 1.08;
+  color: var(--text-strong);
+}
+
+.service-page__subtitle {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.service-page__section {
+  display: grid;
+  gap: 14px;
+}
+
+.service-page__h2 {
+  margin: 0;
+  font-size: clamp(22px, 3.5vw, 30px);
+  color: var(--text-strong);
+}
+
+.service-page__h3 {
+  margin: 0;
+  font-size: 18px;
+  color: var(--text-strong);
+}
+
+.service-page__text {
+  margin: 0;
+  color: var(--text);
+  line-height: 1.7;
+}
+
+.service-page__content-block {
+  display: grid;
+  gap: 10px;
+}
+
+.service-page__grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.service-page__card {
+  padding: 16px;
+  display: grid;
+  gap: 10px;
+}
+
+.service-page__price {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-dark-deep);
+}
+
+.service-page__gallery {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.service-page__gallery-item {
+  border-radius: 16px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--bg-elevated) 85%, transparent);
+}
+
+.service-page__gallery-item img,
+.service-page__gallery-item iframe {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  display: block;
+  border: 0;
+  object-fit: cover;
+}
+
+.service-page__cta {
+  padding: 20px;
+  display: grid;
+  gap: 12px;
+}
+
+.service-page__cta-link {
+  justify-self: start;
+}
+
+.service-page__empty {
+  margin-top: 24px;
+  padding: 22px;
+  display: grid;
+  gap: 12px;
+}
+
+@media (max-width: 900px) {
+  .service-page__grid,
+  .service-page__gallery {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .service-page__inner {
+    padding: 88px 14px 58px;
+  }
+
+  .service-page__text,
+  .service-page__subtitle {
+    font-size: 15px;
+  }
+
+  .service-page__cta-link {
+    width: 100%;
+    justify-content: center;
+  }
+}
+</style>

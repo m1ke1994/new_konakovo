@@ -362,7 +362,7 @@ onUnmounted(() => {
   width: 100%;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1200px) {
   .app-header__brand {
     display: none;
   }

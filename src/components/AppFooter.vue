@@ -14,7 +14,7 @@
             <router-link class="footer__link" to="/volunteer">Волонтерские программы</router-link>
             <router-link class="footer__link" to="/running-club">Беговой клуб</router-link>
             <router-link class="footer__link" to="/schedule">Расписание занятий</router-link>
-            <router-link class="footer__link" to="/articles">Статьи</router-link>
+            <router-link class="footer__link" to="/articles">Статьи / Видео</router-link>
             <router-link class="footer__link" to="/news">Новости</router-link>
             <router-link class="footer__link" to="/contacts">Контакты</router-link>
           </nav>
