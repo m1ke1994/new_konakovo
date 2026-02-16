@@ -64,6 +64,15 @@ const normalizeServiceBase = (service, index = 0) => {
   const { parentId, parentSlug } = extractParentRef(service);
   const rawId = service?.id ?? service?.pk ?? (slug || `service-${index}`);
 
+  const images = Array.isArray(service?.images)
+    ? service.images
+        .map((item, imageIndex) => ({
+          id: item?.id ?? `image-${imageIndex}`,
+          image_url: String(item?.image_url || ""),
+        }))
+        .filter((item) => item.image_url)
+    : [];
+
   return {
     id: rawId,
     slug,
@@ -77,6 +86,7 @@ const normalizeServiceBase = (service, index = 0) => {
     intro: String(service?.intro || ""),
     note: String(service?.note || ""),
     image: String(service?.image || ""),
+    images,
     gallery: Array.isArray(service?.gallery) ? service.gallery : [],
     contentSections: Array.isArray(service?.content_sections)
       ? service.content_sections

@@ -12,6 +12,15 @@ const { getServiceByPath, servicesError, servicesLoaded, servicesLoading } = use
 const bookingSectionRef = ref(null);
 const selectedTariff = ref(null);
 const selectedBookingService = ref(null);
+const selectedImage = ref("");
+const isLightboxOpen = ref(false);
+
+const galleryImagesFallback = [
+  "/images/service-moose-1.jpg",
+  "/images/service-moose-2.jpg",
+  "/images/service-tea-1.jpg",
+  "/images/service-energy-1.jpg",
+];
 
 const slugPath = computed(() =>
   String(route.params.slugPath || "").replace(/^\/+|\/+$/g, "")
@@ -21,6 +30,29 @@ const service = computed(() => getServiceByPath(slugPath.value));
 const bookingService = computed(() => selectedBookingService.value || service.value);
 const hasTariffs = computed(() => Array.isArray(service.value?.tariffs) && service.value.tariffs.length > 0);
 const hasChildren = computed(() => Array.isArray(service.value?.children) && service.value.children.length > 0);
+const serviceImages = computed(() => {
+  const rawImages = Array.isArray(service.value?.images) ? service.value.images : [];
+  const normalized = rawImages
+    .map((item, index) => {
+      const rawUrl = String(item?.image_url || "").trim();
+      if (!rawUrl) return null;
+      const imageUrl = rawUrl.startsWith("/") ? rawUrl : `/${rawUrl}`;
+      return {
+        id: item?.id ?? `image-${index}`,
+        imageUrl,
+      };
+    })
+    .filter(Boolean);
+
+  if (normalized.length) {
+    return normalized;
+  }
+
+  return galleryImagesFallback.map((imageUrl, index) => ({
+    id: `fallback-${index + 1}`,
+    imageUrl,
+  }));
+});
 
 const chooseTariff = (tariff) => {
   selectedBookingService.value = service.value || null;
@@ -29,6 +61,15 @@ const chooseTariff = (tariff) => {
     behavior: "smooth",
     block: "start",
   });
+};
+
+const openImage = (imageUrl) => {
+  selectedImage.value = imageUrl || "";
+  isLightboxOpen.value = Boolean(imageUrl);
+};
+
+const closeLightbox = () => {
+  isLightboxOpen.value = false;
 };
 
 const chooseChildService = (child) => {
@@ -54,6 +95,12 @@ watch(
     }
   }
 );
+
+watch(isLightboxOpen, (isOpen) => {
+  if (!isOpen) {
+    selectedImage.value = "";
+  }
+});
 </script>
 
 <template>
@@ -89,34 +136,6 @@ watch(
             {{ paragraph }}
           </p>
         </article>
-      </section>
-
-      <section v-if="service.gallery?.length" class="service-page__section">
-        <h2 class="service-page__h2">Галерея</h2>
-        <div class="service-page__gallery">
-          <article
-            v-for="(item, index) in service.gallery"
-            :key="`${service.id}-gallery-${index}`"
-            class="service-page__gallery-item"
-          >
-            <img
-              v-if="item.type === 'image'"
-              :src="item.src"
-              :alt="service.title"
-              loading="lazy"
-              decoding="async"
-            />
-            <iframe
-              v-else
-              :src="item.src"
-              title="Видео услуги"
-              loading="lazy"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              referrerpolicy="strict-origin-when-cross-origin"
-              allowfullscreen
-            ></iframe>
-          </article>
-        </div>
       </section>
 
       <section v-if="hasChildren" class="service-page__section">
@@ -167,6 +186,21 @@ watch(
           @update:selected-tariff="selectedTariff = $event"
         />
       </section>
+
+      <section class="service-page__section">
+        <h2 class="service-page__h2">Галерея</h2>
+        <div class="service-page__images-grid">
+          <button
+            v-for="image in serviceImages"
+            :key="image.id"
+            class="service-page__image-btn"
+            type="button"
+            @click="openImage(image.imageUrl)"
+          >
+            <img :src="image.imageUrl" :alt="service.title" loading="lazy" decoding="async" />
+          </button>
+        </div>
+      </section>
     </section>
 
     <section v-else class="service-page__inner">
@@ -181,6 +215,13 @@ watch(
   </main>
 
   <AppFooter />
+
+  <div v-if="isLightboxOpen" class="service-page__lightbox-overlay" @click.self="closeLightbox">
+    <div class="service-page__lightbox">
+      <button class="service-page__lightbox-close" type="button" @click="closeLightbox">×</button>
+      <img v-if="selectedImage" :src="selectedImage" :alt="service?.title || 'Изображение услуги'" />
+    </div>
+  </div>
 </template>
 
 <style scoped>
@@ -278,25 +319,73 @@ watch(
   justify-self: start;
 }
 
-.service-page__gallery {
+.service-page__images-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-.service-page__gallery-item {
+.service-page__image-btn {
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  border-radius: 14px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--bg-elevated) 80%, transparent);
+}
+
+.service-page__image-btn img {
+  width: 100%;
+  height: 220px;
+  display: block;
+  object-fit: cover;
+  transition: transform 220ms ease;
+}
+
+.service-page__image-btn:hover img {
+  transform: scale(1.03);
+}
+
+.service-page__lightbox-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(8, 8, 8, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.service-page__lightbox {
+  position: relative;
+  width: min(1080px, 96vw);
+  max-height: 92vh;
   border-radius: 16px;
   overflow: hidden;
-  background: color-mix(in srgb, var(--bg-elevated) 85%, transparent);
+  background: var(--bg);
 }
 
-.service-page__gallery-item img,
-.service-page__gallery-item iframe {
+.service-page__lightbox img {
   width: 100%;
-  aspect-ratio: 16 / 10;
+  max-height: 92vh;
+  object-fit: contain;
   display: block;
-  border: 0;
-  object-fit: cover;
+}
+
+.service-page__lightbox-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--text-strong);
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
 }
 
 .service-page__empty {
@@ -307,9 +396,12 @@ watch(
 }
 
 @media (max-width: 900px) {
-  .service-page__grid,
-  .service-page__gallery {
+  .service-page__grid {
     grid-template-columns: 1fr;
+  }
+
+  .service-page__images-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -326,6 +418,10 @@ watch(
   .service-page__choose {
     width: 100%;
     justify-content: center;
+  }
+
+  .service-page__images-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>

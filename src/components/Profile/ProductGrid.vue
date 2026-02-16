@@ -80,7 +80,7 @@ const cards = computed(() =>
       duration: service.durationLabel,
       image: service.image || "/images/service-moose-cover.jpg",
       priceLabel: Number.isFinite(minPrice) ? `от ${formatPrice(minPrice)}` : "",
-      detailsLabel: hasChildren ? "Открыть категорию" : "Подробнее",
+      detailsLabel: "Подробнее",
       detailsPath: `/services/${service.path || service.slug || service.id}`,
     };
   })
