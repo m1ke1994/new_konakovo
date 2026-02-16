@@ -6,6 +6,13 @@ const router = createRouter({
     if (savedPosition) {
       return savedPosition
     }
+    if (to.hash) {
+      return {
+        el: to.hash,
+        top: 96,
+        behavior: 'smooth'
+      }
+    }
     return { left: 0, top: 0 }
   },
   routes: [
@@ -20,7 +27,7 @@ const router = createRouter({
     { path: '/articles/:id', name: 'article-single', component: () => import('../views/ArticlesSingleView.vue') },
     { path: '/news', name: 'news', component: () => import('../views/NewsView.vue') },
     { path: '/news/:id', name: 'news-single', component: () => import('../views/NewsSingleView.vue') },
-    { path: '/services/:id', name: 'service-detail', component: () => import('../views/ServiceDetailView.vue') },
+    { path: '/services/:slugPath(.*)', name: 'service-detail', component: () => import('../views/ServiceDetailView.vue') },
     { path: '/contacts', name: 'contacts', component: () => import('../views/ContactsView.vue') },
     { path: '/privacy', name: 'privacy', component: () => import('../views/PrivacyView.vue') },
     { path: '/terms', name: 'terms', component: () => import('../views/TermsView.vue') },

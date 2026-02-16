@@ -120,7 +120,7 @@ const handleSubmit = (event) => {
         </div>
       </div>
 
-      <form class="contacts__form glass-card" novalidate @submit.prevent="handleSubmit">
+      <form id="contact-form" class="contacts__form glass-card" novalidate @submit.prevent="handleSubmit">
         <label class="contacts__field">
           <span class="contacts__field-label">Имя</span>
           <input class="contacts__input" type="text" name="name" placeholder=" " autocomplete="name" required />

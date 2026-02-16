@@ -1,24 +1,47 @@
 <script setup>
-import { computed } from "vue";
-import { useRoute } from "vue-router";
+import { computed, onMounted, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import AppHeader from "../components/AppHeader.vue";
 import AppFooter from "../components/AppFooter.vue";
-import { services } from "../data/services";
+import { formatPrice, loadServices, useServices } from "../composables/useServices";
 
 const route = useRoute();
+const router = useRouter();
 
-const service = computed(() =>
-  services.find((item) => item.id === String(route.params.id))
+const { getServiceByPath, servicesError, servicesLoaded, servicesLoading } = useServices();
+
+const slugPath = computed(() =>
+  String(route.params.slugPath || "").replace(/^\/+|\/+$/g, "")
 );
 
-const formatPrice = (price) => `${Number(price || 0).toLocaleString("ru-RU")} ₽`;
+const service = computed(() => getServiceByPath(slugPath.value));
+const hasTariffs = computed(() => Array.isArray(service.value?.tariffs) && service.value.tariffs.length > 0);
+const hasChildren = computed(() => Array.isArray(service.value?.children) && service.value.children.length > 0);
 
-const hasTariffs = computed(
-  () => Array.isArray(service.value?.tariffs) && service.value.tariffs.length > 0
-);
+const chooseTariff = (tariff) => {
+  const query = {
+    service: service.value?.slug || "",
+    tariff: tariff?.slug || String(tariff?.id || ""),
+  };
 
-const hasSubservices = computed(
-  () => Array.isArray(service.value?.subservices) && service.value.subservices.length > 0
+  router.push({
+    path: "/contacts",
+    hash: "#contact-form",
+    query,
+  });
+};
+
+onMounted(() => {
+  loadServices();
+});
+
+watch(
+  () => route.params.slugPath,
+  () => {
+    if (!servicesLoaded.value && !servicesLoading.value) {
+      loadServices();
+    }
+  }
 );
 </script>
 
@@ -26,13 +49,19 @@ const hasSubservices = computed(
   <AppHeader />
 
   <main class="service-page">
-    <section v-if="service" class="service-page__inner">
+    <section v-if="servicesLoading && !service" class="service-page__inner">
+      <div class="service-page__empty glass-card">
+        <h1 class="service-page__title">Загрузка...</h1>
+      </div>
+    </section>
+
+    <section v-else-if="service" class="service-page__inner">
       <header class="service-page__hero">
         <h1 class="service-page__title">{{ service.fullTitle || service.title }}</h1>
-        <p class="service-page__subtitle">{{ service.description }}</p>
+        <p v-if="service.description" class="service-page__subtitle">{{ service.description }}</p>
       </header>
 
-      <section class="service-page__section">
+      <section v-if="service.intro || service.contentSections?.length" class="service-page__section">
         <h2 class="service-page__h2">Описание</h2>
         <p v-if="service.intro" class="service-page__text">{{ service.intro }}</p>
         <article
@@ -79,29 +108,38 @@ const hasSubservices = computed(
         </div>
       </section>
 
-      <section v-if="hasTariffs || hasSubservices" class="service-page__section">
-        <h2 class="service-page__h2">{{ hasSubservices ? "Подуслуги" : "Тарифы" }}</h2>
-
-        <div v-if="hasSubservices" class="service-page__grid">
+      <section v-if="hasChildren" class="service-page__section">
+        <h2 class="service-page__h2">Подуслуги</h2>
+        <div class="service-page__grid">
           <article
-            v-for="(item, index) in service.subservices"
-            :key="`${service.id}-subservice-${index}`"
+            v-for="child in service.children"
+            :key="child.id"
             class="service-page__card glass-card"
           >
-            <h3 class="service-page__h3">{{ item.title }}</h3>
-            <p v-if="item.description" class="service-page__text">{{ item.description }}</p>
+            <h3 class="service-page__h3">{{ child.title }}</h3>
+            <p v-if="child.description" class="service-page__text">{{ child.description }}</p>
+            <router-link class="btn-outline" :to="`/services/${child.path}`">
+              Открыть
+            </router-link>
           </article>
         </div>
+      </section>
 
-        <div v-if="hasTariffs" class="service-page__grid">
+      <section v-if="hasTariffs" class="service-page__section">
+        <h2 class="service-page__h2">Тарифы</h2>
+        <div class="service-page__grid">
           <article
             v-for="tariff in service.tariffs"
             :key="tariff.id"
             class="service-page__card glass-card"
           >
             <h3 class="service-page__h3">{{ tariff.title }}</h3>
-            <p class="service-page__text">{{ tariff.description }}</p>
+            <p v-if="tariff.description" class="service-page__text">{{ tariff.description }}</p>
+            <p v-if="tariff.duration" class="service-page__meta">{{ tariff.duration }}</p>
             <p class="service-page__price">{{ formatPrice(tariff.price) }}</p>
+            <button class="btn-primary service-page__choose" type="button" @click="chooseTariff(tariff)">
+              {{ tariff.actionLabel || "Выбрать" }}
+            </button>
           </article>
         </div>
       </section>
@@ -112,7 +150,7 @@ const hasSubservices = computed(
           <p class="service-page__text">
             Оставьте заявку, и мы поможем подобрать формат и удобное время.
           </p>
-          <router-link class="btn-primary service-page__cta-link" to="/contacts">
+          <router-link class="btn-primary service-page__cta-link" to="/contacts#contact-form">
             Связаться
           </router-link>
         </div>
@@ -122,7 +160,9 @@ const hasSubservices = computed(
     <section v-else class="service-page__inner">
       <div class="service-page__empty glass-card">
         <h1 class="service-page__title">Услуга не найдена</h1>
-        <p class="service-page__text">Откройте раздел услуг на главной и выберите нужный формат.</p>
+        <p class="service-page__text">
+          {{ servicesError || "Откройте раздел услуг на главной и выберите нужный формат." }}
+        </p>
         <router-link class="btn-secondary" to="/#services">К услугам</router-link>
       </div>
     </section>
@@ -203,11 +243,21 @@ const hasSubservices = computed(
   gap: 10px;
 }
 
+.service-page__meta {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
 .service-page__price {
   margin: 0;
   font-size: 20px;
   font-weight: 700;
   color: var(--color-dark-deep);
+}
+
+.service-page__choose {
+  justify-self: start;
 }
 
 .service-page__gallery {
@@ -265,7 +315,8 @@ const hasSubservices = computed(
     font-size: 15px;
   }
 
-  .service-page__cta-link {
+  .service-page__cta-link,
+  .service-page__choose {
     width: 100%;
     justify-content: center;
   }

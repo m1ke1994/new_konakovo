@@ -1,22 +1,12 @@
 <template>
   <div class="scenario">
     <div class="scenario__layout">
-
-      <!-- LEFT -->
       <section class="scenario__main">
         <h2 class="scenario__title">Соберите сценарий дня</h2>
 
         <div class="services">
-
-          <div
-            v-for="service in services"
-            :key="service.id"
-            class="service"
-          >
-            <button
-              class="service__header"
-              @click="toggleService(service.id)"
-            >
+          <div v-for="service in servicesWithTariffs" :key="service.id" class="service">
+            <button class="service__header" @click="toggleService(service.id)">
               <span class="service__name">
                 {{ service.title }}
               </span>
@@ -26,17 +16,13 @@
               </span>
             </button>
 
-            <div
-              v-if="openServiceId === service.id"
-              class="service__body"
-            >
+            <div v-if="openServiceId === service.id" class="service__body">
               <div
                 v-for="tariff in service.tariffs"
                 :key="tariff.id"
                 class="tariff"
                 :class="{ active: selectedTariffIds.includes(tariff.id) }"
               >
-                <!-- TOP ROW -->
                 <div class="tariff__row">
                   <span class="tariff__title">
                     {{ tariff.title }}
@@ -55,25 +41,18 @@
                   </button>
                 </div>
 
-                <!-- DESCRIPTION -->
                 <div class="tariff__desc">
                   {{ tariff.description }}
                 </div>
               </div>
             </div>
-
           </div>
         </div>
       </section>
 
-      <!-- RIGHT PANEL -->
       <aside class="scenario__aside">
         <div class="panel">
-          <input
-            type="text"
-            v-model="name"
-            placeholder="Имя"
-          />
+          <input type="text" v-model="name" placeholder="Имя" />
 
           <input
             type="text"
@@ -81,11 +60,7 @@
             placeholder="Email или номер телефона"
           />
 
-          <input
-            type="date"
-            v-model="date"
-            placeholder="Выберите дату"
-          />
+          <input type="date" v-model="date" placeholder="Выберите дату" />
           <input
             type="number"
             min="1"
@@ -93,11 +68,7 @@
             v-model.number="guests"
             placeholder="Количество гостей"
           />
-          <textarea
-            rows="3"
-            v-model="comment"
-            placeholder="Комментарий"
-          ></textarea>
+          <textarea rows="3" v-model="comment" placeholder="Комментарий"></textarea>
 
           <div class="summary">
             <div class="summary__row">
@@ -105,11 +76,7 @@
               <strong>{{ formatPrice(total) }}</strong>
             </div>
 
-            <div
-              v-for="t in selectedTariffs"
-              :key="t.tariffId"
-              class="summary__item"
-            >
+            <div v-for="t in selectedTariffs" :key="t.tariffId" class="summary__item">
               {{ t.serviceTitle }} — {{ t.title }}
             </div>
           </div>
@@ -119,14 +86,15 @@
           </button>
         </div>
       </aside>
-
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
-import { services } from "../data/services";
+import { computed, onMounted, ref } from "vue";
+import { formatPrice, loadServices, useServices } from "../composables/useServices";
+
+const { servicesWithTariffs } = useServices();
 
 const selectedTariffIds = ref([]);
 const openServiceId = ref(null);
@@ -136,18 +104,22 @@ const date = ref("");
 const guests = ref("");
 const comment = ref("");
 
+onMounted(() => {
+  loadServices();
+});
+
 const toggleService = (id) => {
   openServiceId.value = openServiceId.value === id ? null : id;
 };
 
 const toggleTariff = (id) => {
   selectedTariffIds.value = selectedTariffIds.value.includes(id)
-    ? selectedTariffIds.value.filter((i) => i !== id)
+    ? selectedTariffIds.value.filter((item) => item !== id)
     : [...selectedTariffIds.value, id];
 };
 
 const selectedTariffs = computed(() =>
-  services.flatMap((service) =>
+  servicesWithTariffs.value.flatMap((service) =>
     service.tariffs
       .filter((tariff) => selectedTariffIds.value.includes(tariff.id))
       .map((tariff) => ({
@@ -159,12 +131,7 @@ const selectedTariffs = computed(() =>
   )
 );
 
-const total = computed(() =>
-  selectedTariffs.value.reduce((sum, t) => sum + t.price, 0)
-);
-
-const formatPrice = (v) =>
-  `${Number(v || 0).toLocaleString("ru-RU")} ₽`;
+const total = computed(() => selectedTariffs.value.reduce((sum, tariff) => sum + tariff.price, 0));
 
 const handleConfirm = () => {
   console.log({
@@ -190,14 +157,10 @@ const handleConfirm = () => {
   gap: 40px;
 }
 
-/* HEADER */
-
 .scenario__title {
   margin-bottom: 20px;
   font-size: 20px;
 }
-
-/* SERVICES */
 
 .service {
   border-bottom: 1px solid var(--border);
@@ -223,13 +186,9 @@ const handleConfirm = () => {
   font-size: 18px;
 }
 
-/* BODY */
-
 .service__body {
   padding-bottom: 12px;
 }
-
-/* TARIFF */
 
 .tariff {
   padding: 8px 0;
@@ -275,8 +234,6 @@ const handleConfirm = () => {
   margin-top: 4px;
 }
 
-/* PANEL */
-
 .panel {
   position: sticky;
   top: 90px;
@@ -308,8 +265,6 @@ const handleConfirm = () => {
   font-size: 12px;
   color: var(--muted);
 }
-
-/* MOBILE */
 
 @media (max-width: 980px) {
   .scenario__layout {

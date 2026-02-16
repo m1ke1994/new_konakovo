@@ -1,5 +1,16 @@
 <template>
-  <div class="services">
+  <div v-if="servicesLoading && !cards.length" class="services-state glass-card" v-reveal>
+    <h3 class="services-state__title">Загружаем услуги...</h3>
+  </div>
+
+  <div v-else-if="!cards.length" class="services-state glass-card" v-reveal>
+    <h3 class="services-state__title">Услуги пока недоступны</h3>
+    <p class="services-state__text">
+      {{ servicesError || "Проверьте настройки API и наличие активных услуг в базе." }}
+    </p>
+  </div>
+
+  <div v-else class="services">
     <article v-for="card in cards" :key="card.id" class="card" v-reveal>
       <div class="media">
         <img
@@ -22,6 +33,7 @@
 
           <div class="meta">
             <span v-if="card.duration" class="chip">{{ card.duration }}</span>
+            <span v-if="card.hasChildren" class="chip">Категория</span>
             <span v-if="card.priceLabel" class="price">{{ card.priceLabel }}</span>
           </div>
         </header>
@@ -32,7 +44,7 @@
 
         <footer class="bottom">
           <router-link class="btn-outline product-grid__more" :to="card.detailsPath">
-            Подробнее
+            {{ card.detailsLabel }}
             <span class="arrow">→</span>
           </router-link>
         </footer>
@@ -42,20 +54,34 @@
 </template>
 
 <script setup>
-import { computed } from "vue";
-import { services } from "../../data/services";
+import { computed, onMounted } from "vue";
+import {
+  findMinTariffPrice,
+  formatPrice,
+  loadServices,
+  useServices,
+} from "../../composables/useServices";
 
-const formatPrice = (price) => `${Number(price || 0).toLocaleString("ru-RU")} ₽`;
+const { servicesError, servicesLoading, servicesTree } = useServices();
+
+onMounted(() => {
+  loadServices();
+});
 
 const cards = computed(() =>
-  services.map((service) => {
-    const minPrice = Math.min(...service.tariffs.map((tariff) => tariff.price));
+  servicesTree.value.map((service) => {
+    const minPrice = findMinTariffPrice(service);
+    const hasChildren = Array.isArray(service.children) && service.children.length > 0;
+
     return {
       ...service,
+      hasChildren,
       desc: service.description,
       duration: service.durationLabel,
-      priceLabel: `от ${formatPrice(minPrice)}`,
-      detailsPath: `/services/${service.id}`,
+      image: service.image || "/images/service-moose-cover.jpg",
+      priceLabel: Number.isFinite(minPrice) ? `от ${formatPrice(minPrice)}` : "",
+      detailsLabel: hasChildren ? "Открыть категорию" : "Подробнее",
+      detailsPath: `/services/${service.path || service.slug || service.id}`,
     };
   })
 );
@@ -70,6 +96,24 @@ const markImageLoaded = (event) => {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 32px;
+}
+
+.services-state {
+  padding: 24px;
+  display: grid;
+  gap: 8px;
+}
+
+.services-state__title {
+  margin: 0;
+  font-size: 22px;
+  color: var(--text-strong);
+}
+
+.services-state__text {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
 }
 
 .card {
@@ -146,6 +190,7 @@ const markImageLoaded = (event) => {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
+  flex-wrap: wrap;
 }
 
 .chip {
