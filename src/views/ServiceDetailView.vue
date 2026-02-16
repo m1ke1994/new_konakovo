@@ -1,14 +1,16 @@
 <script setup>
-import { computed, onMounted, watch } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import { computed, onMounted, ref, watch } from "vue";
+import { useRoute } from "vue-router";
 import AppHeader from "../components/AppHeader.vue";
 import AppFooter from "../components/AppFooter.vue";
+import ServiceBookingForm from "../components/ServiceBookingForm.vue";
 import { formatPrice, loadServices, useServices } from "../composables/useServices";
 
 const route = useRoute();
-const router = useRouter();
 
 const { getServiceByPath, servicesError, servicesLoaded, servicesLoading } = useServices();
+const bookingSectionRef = ref(null);
+const selectedTariff = ref(null);
 
 const slugPath = computed(() =>
   String(route.params.slugPath || "").replace(/^\/+|\/+$/g, "")
@@ -19,15 +21,10 @@ const hasTariffs = computed(() => Array.isArray(service.value?.tariffs) && servi
 const hasChildren = computed(() => Array.isArray(service.value?.children) && service.value.children.length > 0);
 
 const chooseTariff = (tariff) => {
-  const query = {
-    service: service.value?.slug || "",
-    tariff: tariff?.slug || String(tariff?.id || ""),
-  };
-
-  router.push({
-    path: "/contacts",
-    hash: "#contact-form",
-    query,
+  selectedTariff.value = tariff || null;
+  bookingSectionRef.value?.scrollIntoView({
+    behavior: "smooth",
+    block: "start",
   });
 };
 
@@ -38,6 +35,7 @@ onMounted(() => {
 watch(
   () => route.params.slugPath,
   () => {
+    selectedTariff.value = null;
     if (!servicesLoaded.value && !servicesLoading.value) {
       loadServices();
     }
@@ -144,16 +142,12 @@ watch(
         </div>
       </section>
 
-      <section class="service-page__section">
-        <div class="service-page__cta glass-card">
-          <h2 class="service-page__h2">Запись на услугу</h2>
-          <p class="service-page__text">
-            Оставьте заявку, и мы поможем подобрать формат и удобное время.
-          </p>
-          <router-link class="btn-primary service-page__cta-link" to="/contacts#contact-form">
-            Связаться
-          </router-link>
-        </div>
+      <section ref="bookingSectionRef" class="service-page__section">
+        <ServiceBookingForm
+          :service="service"
+          :selected-tariff="selectedTariff"
+          @update:selected-tariff="selectedTariff = $event"
+        />
       </section>
     </section>
 
@@ -281,16 +275,6 @@ watch(
   object-fit: cover;
 }
 
-.service-page__cta {
-  padding: 20px;
-  display: grid;
-  gap: 12px;
-}
-
-.service-page__cta-link {
-  justify-self: start;
-}
-
 .service-page__empty {
   margin-top: 24px;
   padding: 22px;
@@ -315,7 +299,6 @@ watch(
     font-size: 15px;
   }
 
-  .service-page__cta-link,
   .service-page__choose {
     width: 100%;
     justify-content: center;
